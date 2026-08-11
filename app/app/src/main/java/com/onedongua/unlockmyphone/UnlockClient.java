@@ -10,7 +10,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 
 public final class UnlockClient {
 
@@ -30,10 +29,8 @@ public final class UnlockClient {
      *
      * @return 服务端返回的状态，例如 OK 或 ALREADY_UNLOCKED
      */
-    public String unlock() throws Exception {
-        String token = generateToken(System.currentTimeMillis() / 1000L);
-
-        String request = "unlock " + token + "\n";
+    public String unlock(String encryptedPin) throws Exception {
+        String request = "unlock " + encryptedPin + "\n";
 
         try (Socket socket = new Socket()) {
             socket.connect(
@@ -65,23 +62,6 @@ public final class UnlockClient {
 
             return response;
         }
-    }
-
-    /**
-     * 生成当前时间窗口的 Token。
-     */
-    private String generateToken(long unixTimeSeconds) throws Exception {
-        long minute = unixTimeSeconds / 60;
-
-        String input = secret + minute;
-
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-
-        byte[] hash = digest.digest(
-                input.getBytes(StandardCharsets.UTF_8)
-        );
-
-        return bytesToHex(hash).substring(0, 8);
     }
 
     public static String discoverDevice() throws IOException {
@@ -127,18 +107,4 @@ public final class UnlockClient {
         }
     }
 
-    private static String bytesToHex(byte[] bytes) {
-        char[] hex = "0123456789abcdef".toCharArray();
-
-        char[] result = new char[bytes.length * 2];
-
-        for (int i = 0; i < bytes.length; i++) {
-            int value = bytes[i] & 0xff;
-
-            result[i * 2] = hex[value >>> 4];
-            result[i * 2 + 1] = hex[value & 0x0f];
-        }
-
-        return new String(result);
-    }
 }

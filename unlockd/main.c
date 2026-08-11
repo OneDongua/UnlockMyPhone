@@ -7,114 +7,62 @@
 #include <stdlib.h>
 #include <time.h>
 #include <ctype.h>
+#include <stdint.h>
 
 #define PORT 8765
 #define DISCOVERY_PORT 8766
 
-// A 和 B 共同保存的 Secret。
+// Must match PinCrypto.java. This key protects the PIN in transit/storage.
 #define SECRET "tP0lL6mR8pG0uQ4pZ6sK5kS4rE9eS8cC"
 
-// Token 长度
-#define TOKEN_LENGTH 8
+static const uint8_t sbox[256] = {
+0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
+0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
+0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
+0x04,0xc7,0x23,0xc3,0x18,0x96,0x05,0x9a,0x07,0x12,0x80,0xe2,0xeb,0x27,0xb2,0x75,
+0x09,0x83,0x2c,0x1a,0x1b,0x6e,0x5a,0xa0,0x52,0x3b,0xd6,0xb3,0x29,0xe3,0x2f,0x84,
+0x53,0xd1,0x00,0xed,0x20,0xfc,0xb1,0x5b,0x6a,0xcb,0xbe,0x39,0x4a,0x4c,0x58,0xcf,
+0xd0,0xef,0xaa,0xfb,0x43,0x4d,0x33,0x85,0x45,0xf9,0x02,0x7f,0x50,0x3c,0x9f,0xa8,
+0x51,0xa3,0x40,0x8f,0x92,0x9d,0x38,0xf5,0xbc,0xb6,0xda,0x21,0x10,0xff,0xf3,0xd2,
+0xcd,0x0c,0x13,0xec,0x5f,0x97,0x44,0x17,0xc4,0xa7,0x7e,0x3d,0x64,0x5d,0x19,0x73,
+0x60,0x81,0x4f,0xdc,0x22,0x2a,0x90,0x88,0x46,0xee,0xb8,0x14,0xde,0x5e,0x0b,0xdb,
+0xe0,0x32,0x3a,0x0a,0x49,0x06,0x24,0x5c,0xc2,0xd3,0xac,0x62,0x91,0x95,0xe4,0x79,
+0xe7,0xc8,0x37,0x6d,0x8d,0xd5,0x4e,0xa9,0x6c,0x56,0xf4,0xea,0x65,0x7a,0xae,0x08,
+0xba,0x78,0x25,0x2e,0x1c,0xa6,0xb4,0xc6,0xe8,0xdd,0x74,0x1f,0x4b,0xbd,0x8b,0x8a,
+0x70,0x3e,0xb5,0x66,0x48,0x03,0xf6,0x0e,0x61,0x35,0x57,0xb9,0x86,0xc1,0x1d,0x9e,
+0xe1,0xf8,0x98,0x11,0x69,0xd9,0x8e,0x94,0x9b,0x1e,0x87,0xe9,0xce,0x55,0x28,0xdf,
+0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16};
 
-/**
- * 根据时间窗口生成 Token。
- *
- * Token = SHA256(SECRET + minute)
- *
- * minute = Unix timestamp / 60
- *
- * 返回 0 表示成功，-1 表示失败。
- */
-static int generate_token(
-        time_t timestamp,
-        char *token,
-        size_t token_size) {
-    if (token_size < TOKEN_LENGTH + 1)
-        return -1;
-
-    long long minute = (long long) timestamp / 60;
-
-    char input[256];
-
-    snprintf(
-            input,
-            sizeof(input),
-            "%s%lld",
-            SECRET,
-            minute);
-
-    char command[512];
-
-    snprintf(
-            command,
-            sizeof(command),
-            "printf '%%s' '%s' | /system/bin/sha256sum",
-            input);
-
-    FILE *fp = popen(command, "r");
-
-    if (fp == NULL)
-        return -1;
-
-    char hash[128] = {0};
-
-    if (fgets(hash, sizeof(hash), fp) == NULL) {
-        pclose(fp);
-        return -1;
+static uint8_t xtime(uint8_t x) { return (uint8_t)((x << 1) ^ ((x >> 7) * 0x1b)); }
+static void aes256_key_expand(const uint8_t *key, uint8_t *rk) {
+    static const uint8_t rcon[] = {1,2,4,8,16,32,64,128,27,54,108,216,171,77,154};
+    memcpy(rk, key, 32);
+    int bytes = 32, round = 0;
+    while (bytes < 240) {
+        uint8_t t[4]; memcpy(t, rk + bytes - 4, 4);
+        if (bytes % 32 == 0) { uint8_t x=t[0]; t[0]=sbox[t[1]]^rcon[round++]; t[1]=sbox[t[2]]; t[2]=sbox[t[3]]; t[3]=sbox[x]; }
+        else if (bytes % 32 == 16) { t[0]=sbox[t[0]]; t[1]=sbox[t[1]]; t[2]=sbox[t[2]]; t[3]=sbox[t[3]]; }
+        for (int i=0;i<4;i++) { rk[bytes] = rk[bytes-32] ^ t[i]; bytes++; }
     }
-
-    pclose(fp);
-
-    /*
-     * sha256sum 输出类似：
-     *
-     * 1234567890abcdef...  -
-     *
-     * 取前 8 个字符。
-     */
-    for (int i = 0; i < TOKEN_LENGTH; i++) {
-        if (!isxdigit((unsigned char) hash[i]))
-            return -1;
-
-        token[i] = hash[i];
-    }
-
-    token[TOKEN_LENGTH] = '\0';
-
-    return 0;
 }
-
-/**
- * 检查 Token。
- *
- * 接受：
- *
- * 当前时间窗口
- * 前一个时间窗口
- * 后一个时间窗口
- */
-static int verify_token(const char *received) {
-    time_t now = time(NULL);
-
-    char token[TOKEN_LENGTH + 1];
-
-    for (int offset = -1; offset <= 1; offset++) {
-        time_t timestamp = now + offset * 60;
-
-        if (generate_token(
-                timestamp,
-                token,
-                sizeof(token)) != 0) {
-            continue;
-        }
-
-        if (strcmp(received, token) == 0) {
-            return 1;
-        }
-    }
-
-    return 0;
+static void aes256_block(const uint8_t *in, uint8_t *out, const uint8_t *rk) {
+    uint8_t s[16]; memcpy(s,in,16); for(int i=0;i<16;i++) s[i]^=rk[i];
+    for(int round=1;round<=14;round++) {
+        for(int i=0;i<16;i++) s[i]=sbox[s[i]];
+        uint8_t t[16];
+        for(int c=0;c<4;c++){int j=4*c; t[j]=s[j];t[j+1]=s[(j+5)%16];t[j+2]=s[(j+10)%16];t[j+3]=s[(j+15)%16];}
+        if(round<14) for(int c=0;c<4;c++){int j=4*c;uint8_t a=t[j],b=t[j+1],d=t[j+2],e=t[j+3];s[j]=xtime(a)^xtime(b)^b^d^e;s[j+1]=a^xtime(b)^xtime(d)^d^e;s[j+2]=a^b^xtime(d)^xtime(e)^e;s[j+3]=xtime(a)^a^b^d^xtime(e);} else memcpy(s,t,16);
+        for(int i=0;i<16;i++) s[i]^=rk[round*16+i];
+    } memcpy(out,s,16);
+}
+static int b64val(char c) { if(c>='A'&&c<='Z')return c-'A'; if(c>='a'&&c<='z')return c-'a'+26; if(c>='0'&&c<='9')return c-'0'+52; if(c=='+')return 62; if(c=='/')return 63; return -1; }
+static int base64_decode(const char *in, uint8_t *out, size_t cap) { size_t n=0; int val=0,bits=-8; for(;*in;in++){ if(*in=='=')break; int x=b64val(*in); if(x<0) return -1; val=(val<<6)|x; bits+=6; if(bits>=0){if(n>=cap)return -1;out[n++]=(uint8_t)((val>>bits)&255);bits-=8;}} return (int)n; }
+static int decrypt_pin(const char *encoded, char *pin, size_t pin_size) {
+    uint8_t payload[128], rk[240], stream[16]; int length=base64_decode(encoded,payload,sizeof(payload));
+    if(length<17 || length-16 >= (int)pin_size || length-16 > 16) return -1;
+    aes256_key_expand((const uint8_t *)SECRET,rk); uint8_t counter[16]; memcpy(counter,payload,16);
+    for(int i=16;i<length;i++){ if((i-16)%16==0){aes256_block(counter,stream,rk); for(int j=15;j>=0;j--)if(++counter[j])break;} pin[i-16]=(char)(payload[i]^stream[(i-16)%16]); }
+    pin[length-16]='\0'; for(int i=0;i<length-16;i++)if(!isdigit((unsigned char)pin[i]))return -1; return 0;
 }
 
 /**
@@ -153,7 +101,7 @@ static int is_screen_locked(void)
 /**
  * 执行解锁。
  */
-static void unlock_device(void) {
+static void unlock_device(const char *pin) {
     system("/system/bin/input keyevent 224");
 
     usleep(300000);
@@ -162,7 +110,9 @@ static void unlock_device(void) {
 
     usleep(300000);
 
-    system("/system/bin/input text 6666");
+    char command[64];
+    snprintf(command, sizeof(command), "/system/bin/input text '%s'", pin);
+    system(command);
 }
 
 /**
@@ -371,7 +321,7 @@ int main(void) {
             /*
              * 期望：
              *
-             * unlock 12345678
+             * unlock <base64(iv + AES-256-CTR ciphertext)>
              */
 
             char command[32];
@@ -386,15 +336,13 @@ int main(void) {
                     command,
                     token) == 2) {
                 if (strcmp(command, "unlock") == 0) {
-                    printf(
-                            "unlock request, token=%s\n",
-                            token);
+                            printf("unlock request received\n");
 
                     fflush(stdout);
 
-                    if (verify_token(token)) {
-                        printf(
-                                "token verified\n");
+                    char pin[17];
+                    if (decrypt_pin(token, pin, sizeof(pin)) == 0) {
+                        printf("PIN decrypted\n");
 
                         fflush(stdout);
 
@@ -404,7 +352,7 @@ int main(void) {
                             printf("device is locked, unlocking\n");
                             fflush(stdout);
 
-                            unlock_device();
+                            unlock_device(pin);
 
                             write(
                                     client_fd,
@@ -429,7 +377,7 @@ int main(void) {
                         }
                     } else {
                         printf(
-                                "invalid token\n");
+                                "invalid encrypted PIN\n");
 
                         fflush(stdout);
 

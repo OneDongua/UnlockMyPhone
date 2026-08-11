@@ -21,6 +21,31 @@
         android:layout_height="wrap_content"
         android:text="@string/rescan_device" />
 
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_margin="64dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/et_pin"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/pin_hint"
+            android:inputType="numberPassword"
+            android:maxLength="16" />
+
+        <Button
+            android:id="@+id/btn_save_pin"
+            android:layout_weight="0"
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/save_pin" />
+
+    </LinearLayout>
+
     <Button
         android:id="@+id/btn_unlock"
         android:layout_gravity="center"
