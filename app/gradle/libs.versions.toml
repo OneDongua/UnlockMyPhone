@@ -1,0 +1,10 @@
+[versions]
+agp = "9.3.1"
+appcompat = "1.7.1"
+
+[libraries]
+appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+
