@@ -10,7 +10,6 @@
 #include <stdint.h>
 
 #define PORT 8765
-#define DISCOVERY_PORT 8766
 
 // Must match PinCrypto.java. This key protects the PIN in transit/storage.
 #define SECRET "tP0lL6mR8pG0uQ4pZ6sK5kS4rE9eS8cC"
@@ -118,64 +117,39 @@ static void unlock_device(const char *pin) {
 /**
  * UDP 设备发现线程。
  *
- * B：
- *
- * UDP -> 8766
- * "DISCOVER_UNLOCKD"
- *
- * A：
- *
- * UDP -> B
- * "UNLOCKD"
+ * B 扫描局域网内的 UDP 8765，A 收到请求后返回 UNLOCKD。
  */
 static void *discovery_thread(void *arg) {
     (void) arg;
 
-    int udp_fd = socket(
-            AF_INET,
-            SOCK_DGRAM,
-            0);
-
+    int udp_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (udp_fd < 0) {
         perror("discovery socket");
         return NULL;
     }
 
     int reuse = 1;
-
-    if (setsockopt(
-            udp_fd,
-            SOL_SOCKET,
-            SO_REUSEADDR,
-            &reuse,
-            sizeof(reuse)) < 0) {
+    if (setsockopt(udp_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
         perror("discovery setsockopt");
     }
 
     struct sockaddr_in addr = {
             .sin_family = AF_INET,
-            .sin_port = htons(DISCOVERY_PORT),
+            .sin_port = htons(PORT),
             .sin_addr.s_addr = htonl(INADDR_ANY)
     };
 
-    if (bind(
-            udp_fd,
-            (struct sockaddr *) &addr,
-            sizeof(addr)) < 0) {
+    if (bind(udp_fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
         perror("discovery bind");
         close(udp_fd);
         return NULL;
     }
 
-    printf(
-            "discovery listening on UDP port %d\n",
-            DISCOVERY_PORT);
-
+    printf("discovery listening on UDP port %d\n", PORT);
     fflush(stdout);
 
     while (1) {
         char buffer[128] = {0};
-
         struct sockaddr_in client_addr;
         socklen_t client_len = sizeof(client_addr);
 
@@ -186,61 +160,33 @@ static void *discovery_thread(void *arg) {
                 0,
                 (struct sockaddr *) &client_addr,
                 &client_len);
-
         if (len < 0) {
             perror("discovery recvfrom");
             continue;
         }
 
         buffer[len] = '\0';
-
         if (strcmp(buffer, "DISCOVER_UNLOCKD") == 0) {
-            char client_ip[INET_ADDRSTRLEN] = {0};
-
-            inet_ntop(
-                    AF_INET,
-                    &client_addr.sin_addr,
-                    client_ip,
-                    sizeof(client_ip));
-
-            printf(
-                    "discovery request from %s\n",
-                    client_ip);
-
-            fflush(stdout);
-
             const char *response = "UNLOCKD";
-
-            ssize_t sent = sendto(
+            if (sendto(
                     udp_fd,
                     response,
                     strlen(response),
                     0,
                     (struct sockaddr *) &client_addr,
-                    client_len);
-
-            if (sent < 0) {
+                    client_len) < 0) {
                 perror("discovery sendto");
             }
         }
     }
 
     close(udp_fd);
-
     return NULL;
 }
 
 int main(void) {
-    /*
-     * 创建 UDP 发现线程。
-     */
     pthread_t discovery_tid;
-
-    if (pthread_create(
-            &discovery_tid,
-            NULL,
-            discovery_thread,
-            NULL) != 0) {
+    if (pthread_create(&discovery_tid, NULL, discovery_thread, NULL) != 0) {
         perror("pthread_create");
         return 1;
     }
