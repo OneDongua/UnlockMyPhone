@@ -20,7 +20,7 @@ UDP 和 TCP 使用相同的端口号是允许的，因为两者属于独立的�
 
 ## 编译 A
 
-环境要求：Android NDK、CMake 和 Ninja。Windows 下可直接执行：
+环境要求：Android NDK、CMake 和 Ninja。Windows 下可参考 build.bat 修改目录后执行：
 
 ```bat
 cd unlockd
@@ -40,6 +40,20 @@ adb push unlockd/build/unlockd /data/local/tmp/unlockd
 adb shell chmod 700 /data/local/tmp/unlockd
 adb shell /data/local/tmp/unlockd
 ```
+
+## 封装为 Magisk 模块
+
+`unlockd` 可以通过 Magisk 在开机后自动启动。先编译 native daemon，再执行：
+
+```bat
+cd unlockd
+build-module.bat
+```
+
+生成的模块位于 `unlockd/build/unlockd-magisk.zip`，可在 Magisk 中安装。模块会等待
+Android 完成开机后启动 `unlockd`，并将输出记录到 `/data/adb/unlockd.log`。
+
+当前模块内的 daemon 架构为 `arm64-v8a`；其他 ABI 需要分别编译并替换模块中的二进制。
 
 A 需要具备执行输入事件和读取锁屏状态所需的权限。程序启动后应看到：
 

@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             btnUnlock.setEnabled(false);
-            client = new UnlockClient(ip, "");
+            client = new UnlockClient(ip);
             new Thread(() -> {
                 try {
                     String response = client.unlock(encryptedPin);

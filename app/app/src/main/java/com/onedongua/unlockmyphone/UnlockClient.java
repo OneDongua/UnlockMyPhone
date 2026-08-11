@@ -31,14 +31,12 @@ public final class UnlockClient {
     private static final int DISCOVERY_SCAN_TIMEOUT_MS = 3000;
     private static final int DISCOVERY_THREADS = 32;
     private static final long MAX_DISCOVERY_HOSTS = 65534;
-    private static final int TIMEOUT_MS = 3000;
+    private static final int UNLOCK_TIMEOUT_MS = 8000;
 
     private final String host;
-    private final String secret;
 
-    public UnlockClient(String host, String secret) {
+    public UnlockClient(String host) {
         this.host = host;
-        this.secret = secret;
     }
 
     /**
@@ -52,10 +50,10 @@ public final class UnlockClient {
         try (Socket socket = new Socket()) {
             socket.connect(
                     new InetSocketAddress(host, PORT),
-                    TIMEOUT_MS
+                    UNLOCK_TIMEOUT_MS
             );
 
-            socket.setSoTimeout(TIMEOUT_MS);
+            socket.setSoTimeout(UNLOCK_TIMEOUT_MS);
 
             PrintWriter writer = new PrintWriter(
                     new OutputStreamWriter(

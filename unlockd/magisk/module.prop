@@ -1,0 +1,6 @@
+id=unlockd
+name=unlockd
+version=1.0.0
+versionCode=1
+author=OneDongua
+description=Starts the unlockd TCP/UDP unlock service at boot.
