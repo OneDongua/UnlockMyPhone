@@ -167,6 +167,16 @@ static void *discovery_thread(void *arg) {
 
         buffer[len] = '\0';
         if (strcmp(buffer, "DISCOVER_UNLOCKD") == 0) {
+            char client_ip[INET_ADDRSTRLEN] = {0};
+            inet_ntop(
+                    AF_INET,
+                    &client_addr.sin_addr,
+                    client_ip,
+                    sizeof(client_ip));
+
+            printf("discovery request from %s\n", client_ip);
+            fflush(stdout);
+
             const char *response = "UNLOCKD";
             if (sendto(
                     udp_fd,
@@ -176,6 +186,9 @@ static void *discovery_thread(void *arg) {
                     (struct sockaddr *) &client_addr,
                     client_len) < 0) {
                 perror("discovery sendto");
+            } else {
+                printf("discovery response sent to %s\n", client_ip);
+                fflush(stdout);
             }
         }
     }
