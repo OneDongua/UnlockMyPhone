@@ -2,6 +2,12 @@
     <string name="app_name">解锁手机</string>
     <string name="click_to_unlock">点击解锁</string>
     <string name="unlock_success">解锁成功</string>
+    <string name="already_unlocked">设备已解锁</string>
     <string name="unlock_failure">解锁失败</string>
+    <string name="unlock_timeout">解锁请求超时</string>
     <string name="cannot_find_device">找不到设备</string>
+    <string name="scanning_device">正在扫描设备…</string>
+    <string name="device_found">已发现设备：%1$s</string>
+    <string name="device_not_found">未发现设备</string>
+    <string name="rescan_device">重新扫描</string>
 </resources>

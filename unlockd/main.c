@@ -118,6 +118,39 @@ static int verify_token(const char *received) {
 }
 
 /**
+ * 查询当前是否显示锁屏界面。
+ *
+ * 返回：
+ *   1  当前为锁屏状态
+ *   0  当前未锁屏
+ *  -1  无法读取或识别系统状态
+ */
+static int is_screen_locked(void)
+{
+    FILE *fp = popen(
+        "dumpsys window | grep -E 'mKeyguardShowing|mDreamingLockscreen'",
+        "r");
+
+    if (fp == NULL)
+        return -1;
+
+    char buffer[512];
+
+    while (fgets(buffer, sizeof(buffer), fp) != NULL)
+    {
+        if (strstr(buffer, "mKeyguardShowing=true") != NULL ||
+            strstr(buffer, "mDreamingLockscreen=true") != NULL)
+        {
+            pclose(fp);
+            return 1;
+        }
+    }
+
+    pclose(fp);
+    return 0;
+}
+
+/**
  * 执行解锁。
  */
 static void unlock_device(void) {
@@ -365,12 +398,35 @@ int main(void) {
 
                         fflush(stdout);
 
-                        unlock_device();
+                        int lock_state = is_screen_locked();
 
-                        write(
-                                client_fd,
-                                "OK\n",
-                                3);
+                        if (lock_state == 1) {
+                            printf("device is locked, unlocking\n");
+                            fflush(stdout);
+
+                            unlock_device();
+
+                            write(
+                                    client_fd,
+                                    "OK\n",
+                                    sizeof("OK\n") - 1);
+                        } else if (lock_state == 0) {
+                            printf("device is already unlocked\n");
+                            fflush(stdout);
+
+                            write(
+                                    client_fd,
+                                    "ALREADY_UNLOCKED\n",
+                                    sizeof("ALREADY_UNLOCKED\n") - 1);
+                        } else {
+                            printf("unable to determine lock state\n");
+                            fflush(stdout);
+
+                            write(
+                                    client_fd,
+                                    "LOCK_STATE_UNKNOWN\n",
+                                    sizeof("LOCK_STATE_UNKNOWN\n") - 1);
+                        }
                     } else {
                         printf(
                                 "invalid token\n");

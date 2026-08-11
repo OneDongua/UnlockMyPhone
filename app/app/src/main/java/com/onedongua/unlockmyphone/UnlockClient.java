@@ -28,9 +28,9 @@ public final class UnlockClient {
     /**
      * 请求目标手机解锁。
      *
-     * @return true 表示目标手机接受了请求
+     * @return 服务端返回的状态，例如 OK 或 ALREADY_UNLOCKED
      */
-    public boolean unlock() throws Exception {
+    public String unlock() throws Exception {
         String token = generateToken(System.currentTimeMillis() / 1000L);
 
         String request = "unlock " + token + "\n";
@@ -63,7 +63,7 @@ public final class UnlockClient {
 
             String response = reader.readLine();
 
-            return "OK".equals(response);
+            return response;
         }
     }
 

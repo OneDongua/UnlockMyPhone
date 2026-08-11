@@ -5,6 +5,22 @@
     android:layout_height="match_parent"
     android:id="@+id/root">
 
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:gravity="center"
+        android:text="@string/scanning_device"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/btn_rescan"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/rescan_device" />
+
     <Button
         android:id="@+id/btn_unlock"
         android:layout_gravity="center"
