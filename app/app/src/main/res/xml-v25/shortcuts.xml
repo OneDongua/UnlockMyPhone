@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="unlock_request"
+        android:enabled="true"
+        android:icon="@drawable/lock_open_24px"
+        android:shortcutShortLabel="@string/shortcut_unlock"
+        android:shortcutLongLabel="@string/shortcut_unlock_long">
+        <intent
+            android:action="com.onedongua.unlockmyphone.action.UNLOCK_REQUEST"
+            android:targetPackage="com.onedongua.unlockmyphone"
+            android:targetClass="com.onedongua.unlockmyphone.MainActivity" />
+    </shortcut>
+</shortcuts>

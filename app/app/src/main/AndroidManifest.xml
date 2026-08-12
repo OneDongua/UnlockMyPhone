@@ -17,13 +17,37 @@
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.UnlockMyPhone"
-            android:configChanges="orientation|screenSize|keyboardHidden">
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:launchMode="singleTop">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".UnlockTileService"
+            android:label="@string/shortcut_unlock"
+            android:icon="@drawable/lock_open_24px"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".UnlockRequestService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.onedongua.unlockmyphone.action.UNLOCK_REQUEST" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>

@@ -31,7 +31,7 @@ public final class UnlockClient {
     private static final int DISCOVERY_SCAN_TIMEOUT_MS = 3000;
     private static final int DISCOVERY_THREADS = 32;
     private static final long MAX_DISCOVERY_HOSTS = 65534;
-    private static final int UNLOCK_TIMEOUT_MS = 8000;
+    private static final int UNLOCK_TIMEOUT_MS = 15000;
 
     private final String host;
 
