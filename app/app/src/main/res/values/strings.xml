@@ -7,14 +7,21 @@
     <string name="unlock_timeout">解锁请求超时</string>
     <string name="cannot_find_device">找不到设备</string>
     <string name="scanning_device">正在扫描设备…</string>
-    <string name="device_found">已发现设备：%1$s</string>
+    <string name="device_found">目标设备：%1$s</string>
     <string name="device_not_found">未发现设备</string>
     <string name="rescan_device">重新扫描</string>
+    <string name="ip_hint">手动输入设备 IP 地址</string>
+    <string name="save_ip">保存 IP</string>
+    <string name="delete_ip">删除 IP</string>
+    <string name="ip_saved">IP 地址已保存</string>
+    <string name="ip_invalid">请输入有效的 IPv4 地址</string>
     <string name="pin_hint">输入锁屏 PIN（4–16 位数字）</string>
     <string name="save_pin">保存 PIN</string>
+    <string name="delete_pin">删除 PIN</string>
     <string name="pin_saved">PIN 已保存</string>
     <string name="pin_invalid">PIN 必须是 4–16 位数字</string>
     <string name="pin_required">请先设置 PIN</string>
     <string name="pin_save_failure">PIN 保存失败</string>
     <string name="pin_saved_hint">PIN 已保存（修改请输入新 PIN）</string>
+    <string name="deleted">已删除</string>
 </resources>

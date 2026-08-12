@@ -23,7 +23,42 @@
 
     <LinearLayout
         android:orientation="horizontal"
-        android:layout_margin="64dp"
+        android:layout_marginVertical="16dp"
+        android:layout_marginHorizontal="64dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/et_ip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/ip_hint"
+            android:inputType="text"
+            android:maxLength="15"
+            android:singleLine="true" />
+
+        <Button
+            android:id="@+id/btn_save_ip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/save_ip" />
+
+        <Button
+            android:id="@+id/btn_delete_ip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/delete_ip"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_marginHorizontal="64dp"
+        android:layout_marginVertical="16dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -43,6 +78,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/save_pin" />
+
+        <Button
+            android:id="@+id/btn_delete_pin"
+            android:layout_weight="0"
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/delete_pin"
+            android:visibility="gone" />
 
     </LinearLayout>
 

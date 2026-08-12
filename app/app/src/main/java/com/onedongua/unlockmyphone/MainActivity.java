@@ -5,6 +5,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.view.View;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,6 +15,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity {
     private static final String ENCRYPTED_PIN = "encrypted_pin";
+    private static final String DEVICE_IP = "device_ip";
     private UnlockClient client;
     private String ip;
     private TextView statusView;
@@ -27,12 +29,46 @@ public class MainActivity extends AppCompatActivity {
 
         statusView = findViewById(R.id.tv_status);
         rescanButton = findViewById(R.id.btn_rescan);
+        EditText ipInput = findViewById(R.id.et_ip);
+        Button saveIpButton = findViewById(R.id.btn_save_ip);
+        Button deleteIpButton = findViewById(R.id.btn_delete_ip);
+        String savedIp = getPreferences(MODE_PRIVATE).getString(DEVICE_IP, "");
+        if (!savedIp.isEmpty()) {
+            ipInput.setText(savedIp);
+            deleteIpButton.setVisibility(View.VISIBLE);
+            ip = savedIp;
+            statusView.setText(getString(R.string.device_found, savedIp));
+        }
+        saveIpButton.setOnClickListener(v -> {
+            String inputIp = ipInput.getText().toString().trim();
+            if (!isValidIpv4(inputIp)) {
+                Toast.makeText(this, R.string.ip_invalid, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            ip = inputIp;
+            getPreferences(MODE_PRIVATE).edit().putString(DEVICE_IP, inputIp).apply();
+            deleteIpButton.setVisibility(View.VISIBLE);
+            statusView.setText(getString(R.string.device_found, inputIp));
+            Toast.makeText(this, R.string.ip_saved, Toast.LENGTH_SHORT).show();
+        });
+        deleteIpButton.setOnClickListener(v -> {
+            getPreferences(MODE_PRIVATE).edit().remove(DEVICE_IP).apply();
+            ipInput.getText().clear();
+            ip = null;
+            deleteIpButton.setVisibility(View.GONE);
+            statusView.setText(R.string.device_not_found);
+            Toast.makeText(this, R.string.deleted, Toast.LENGTH_SHORT).show();
+        });
         EditText pinInput = findViewById(R.id.et_pin);
         Button savePinButton = findViewById(R.id.btn_save_pin);
+        Button deletePinButton = findViewById(R.id.btn_delete_pin);
         boolean hasSavedPin = !getPreferences(MODE_PRIVATE).getString(ENCRYPTED_PIN, "").isEmpty();
+        if (hasSavedPin) deletePinButton.setVisibility(View.VISIBLE);
         if (hasSavedPin) pinInput.setHint(R.string.pin_saved_hint);
         pinInput.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus && hasSavedPin) pinInput.setText("");
+            if (hasFocus && !getPreferences(MODE_PRIVATE).getString(ENCRYPTED_PIN, "").isEmpty()) {
+                pinInput.setText("");
+            }
         });
         savePinButton.setOnClickListener(v -> {
             String pin = pinInput.getText().toString();
@@ -44,13 +80,21 @@ public class MainActivity extends AppCompatActivity {
                 String encrypted = PinCrypto.encrypt(pin);
                 getPreferences(MODE_PRIVATE).edit().putString(ENCRYPTED_PIN, encrypted).apply();
                 pinInput.getText().clear();
+                deletePinButton.setVisibility(View.VISIBLE);
                 Toast.makeText(this, R.string.pin_saved, Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
                 Toast.makeText(this, R.string.pin_save_failure, Toast.LENGTH_SHORT).show();
             }
         });
+        deletePinButton.setOnClickListener(v -> {
+            getPreferences(MODE_PRIVATE).edit().remove(ENCRYPTED_PIN).apply();
+            pinInput.getText().clear();
+            pinInput.setHint(R.string.pin_hint);
+            deletePinButton.setVisibility(View.GONE);
+            Toast.makeText(this, R.string.deleted, Toast.LENGTH_SHORT).show();
+        });
         rescanButton.setOnClickListener(v -> scanForDevice());
-        scanForDevice();
+        if (savedIp.isEmpty()) scanForDevice();
 
         Button btnUnlock = findViewById(R.id.btn_unlock);
         btnUnlock.setOnClickListener(v -> {
@@ -86,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         btnUnlock.setEnabled(true);
                         Toast.makeText(this, R.string.unlock_failure, Toast.LENGTH_SHORT).show();
-                        scanForDevice();
+                        //scanForDevice();
                     });
                 }
             }).start();
@@ -111,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 ip = finalDiscoveredIp;
                 if (finalDiscoveredIp != null) {
+                    getPreferences(MODE_PRIVATE).edit().putString(DEVICE_IP, finalDiscoveredIp).apply();
                     statusView.setText(getString(R.string.device_found, finalDiscoveredIp));
                 } else {
                     statusView.setText(R.string.device_not_found);
@@ -118,6 +163,23 @@ public class MainActivity extends AppCompatActivity {
                 rescanButton.setEnabled(true);
             });
         }).start();
+    }
+
+    private static boolean isValidIpv4(String value) {
+        String[] parts = value.split("\\.", -1);
+        if (parts.length != 4) return false;
+        for (String part : parts) {
+            if (part.isEmpty() || part.length() > 3) return false;
+            for (int i = 0; i < part.length(); i++) {
+                if (!Character.isDigit(part.charAt(i))) return false;
+            }
+            try {
+                if (Integer.parseInt(part) > 255) return false;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+        return true;
     }
 
 
