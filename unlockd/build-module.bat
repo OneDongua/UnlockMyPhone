@@ -15,10 +15,10 @@ if not exist "%DAEMON%" (
 if exist "%STAGING%" rmdir /s /q "%STAGING%"
 if exist "%OUTPUT%" del /q "%OUTPUT%"
 
-mkdir "%STAGING%\bin"
+mkdir "%STAGING%\system\bin"
 copy /y "%MODULE_DIR%\module.prop" "%STAGING%\module.prop" >nul
 copy /y "%MODULE_DIR%\service.sh" "%STAGING%\service.sh" >nul
-copy /y "%DAEMON%" "%STAGING%\bin\unlockd" >nul
+copy /y "%DAEMON%" "%STAGING%\system\bin\unlockd" >nul
 
 rem ZIP is created from inside the module root so Magisk sees module.prop at the root.
 tar -a -c -f "%OUTPUT%" -C "%STAGING%" *

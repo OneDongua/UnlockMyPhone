@@ -1,7 +1,7 @@
 #!/system/bin/sh
 
 MODDIR="${0%/*}"
-DAEMON="$MODDIR/bin/unlockd"
+DAEMON=/system/bin/unlockd
 LOGFILE=/data/adb/unlockd.log
 
 # Start each boot with a fresh log.
@@ -23,10 +23,6 @@ if pidof unlockd >/dev/null 2>&1; then
     exit 0
 fi
 
-chmod 755 "$DAEMON"
 umask 077
 echo "unlockd: starting $(date)" >> "$LOGFILE"
-# Detach stdin as well as stdout/stderr.  Otherwise cmd/input can inherit a
-# terminal pty from the caller and system_server may reject its Binder call
-# with: Failed transaction (2147483646).
 nohup "$DAEMON" < /dev/null >> "$LOGFILE" 2>&1 &
