@@ -1,7 +1,8 @@
 # unlockd Magisk module
 
-This module installs the `unlockd` AArch64 daemon under `system/bin` and
-starts it from `service.sh` after Android reports boot completion.
+This module installs the `unlockd` AArch64 daemon at
+`/data/adb/modules/unlockd/bin/unlockd` and starts it from `service.sh` after
+Android reports boot completion.
 
 Build the native daemon first, then run `build-module.bat` from this directory
 or from the `unlockd` directory. Install the generated ZIP from Magisk.

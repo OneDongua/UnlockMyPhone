@@ -101,16 +101,23 @@ static int is_screen_locked(void)
  * 执行解锁。
  */
 static void unlock_device(const char *pin) {
-    system("/system/bin/input keyevent 224");
+    /*
+     * input -> cmd -> system_server is a Binder call.  Never let it inherit
+     * the daemon's stdin: when service.sh was started from a terminal (or
+     * through su -c), system_server may try to use that pty and reject the
+     * transaction with 2147483646.
+     */
+    system("/system/bin/input keyevent 224 < /dev/null");
 
     usleep(300000);
 
-    system("/system/bin/input keyevent 82");
+    system("/system/bin/input keyevent 82 < /dev/null");
 
     usleep(300000);
 
     char command[64];
     snprintf(command, sizeof(command), "/system/bin/input text '%s'", pin);
+    strncat(command, " < /dev/null", sizeof(command) - strlen(command) - 1);
     system(command);
 }
 

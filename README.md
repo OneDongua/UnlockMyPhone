@@ -51,7 +51,8 @@ build-module.bat
 ```
 
 生成的模块位于 `unlockd/build/unlockd-magisk.zip`，可在 Magisk 中安装。模块会等待
-Android 完成开机后启动 `unlockd`，并将输出记录到 `/data/adb/unlockd.log`。
+Android 完成开机后启动 `/data/adb/modules/unlockd/bin/unlockd`，并将输出记录到
+`/data/adb/unlockd.log`。
 
 当前模块内的 daemon 架构为 `arm64-v8a`；其他 ABI 需要分别编译并替换模块中的二进制。
 
